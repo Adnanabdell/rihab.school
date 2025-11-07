@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Student Data Viewer (Arabic) google",
+  "description": "An application to fetch, display, and filter student data from an n8n webhook. The interface is in Arabic and supports right-to-left layout.",
+  "requestFramePermissions": []
+}
