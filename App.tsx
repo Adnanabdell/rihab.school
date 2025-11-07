@@ -48,8 +48,9 @@ const App: React.FC = () => {
       const url = new URL(WEBHOOK_URL);
       url.searchParams.append('action', 'get_students');
       
-      if (teacher !== 'all') url.searchParams.append('teacher', teacher);
-      if (level !== 'all') url.searchParams.append('level', level);
+      // Always send teacher and level to prevent n8n workflow error
+      url.searchParams.append('teacher', teacher);
+      url.searchParams.append('level', level);
 
       const response = await fetch(url.toString());
       if (!response.ok) {
@@ -62,7 +63,11 @@ const App: React.FC = () => {
       }
 
       if (!Array.isArray(data) || data.length === 0 || !data[0].students || !Array.isArray(data[0].students)) {
-        throw new Error('تنسيق البيانات المستلمة غير صحيح.');
+        // If the workflow returns an empty array, it means no students were found. Treat this as a valid but empty response.
+        setStudents([]);
+        setAttendance({});
+        setIsLoading(false);
+        return;
       }
       
       const studentList = (data as ApiResponseItem[])[0].students;
@@ -172,7 +177,7 @@ const App: React.FC = () => {
 
         const result = await response.json();
         // Assuming n8n returns a success message on the first item
-        if (result && result[0] && result[0].json && result[0].json.message === 'Attendance recorded') {
+        if (result && result.message === 'Attendance recorded') {
              setSubmitMessage({ type: 'success', text: 'تم تسجيل الحضور بنجاح!' });
         } else {
             setSubmitMessage({ type: 'success', text: 'تم إرسال البيانات، ولكن لم يتم استلام تأكيد.' });
@@ -220,8 +225,11 @@ const App: React.FC = () => {
         </div>
       );
     }
+    if (students.length === 0) {
+        return <p className="text-center text-gray-500 py-10">لا يوجد طلاب لعرضهم بهذه الفلاتر.</p>;
+    }
     if (filteredStudents.length === 0) {
-        return <p className="text-center text-gray-500 py-10">لا يوجد طلاب لعرضهم.</p>;
+        return <p className="text-center text-gray-500 py-10">لا يوجد طلاب يطابقون البحث.</p>;
     }
     return (
         <>
@@ -342,7 +350,7 @@ const App: React.FC = () => {
           <div className="overflow-x-auto">
             {renderContent()}
           </div>
-            {!isLoading && !error && filteredStudents.length > 0 && (
+            {!isLoading && !error && students.length > 0 && filteredStudents.length > 0 && (
                 <form onSubmit={handleSubmitAttendance} className="p-4 bg-slate-50 border-t rounded-b-lg">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                         <div className="md:col-span-2">
