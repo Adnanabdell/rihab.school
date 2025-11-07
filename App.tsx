@@ -83,8 +83,18 @@ const App: React.FC = () => {
                 const errorData = await response.text();
                 throw new Error(`خطأ في الشبكة: ${response.statusText} - ${errorData}`);
             }
+            
+            // Check for empty response before parsing JSON
+            const responseText = await response.text();
+            if (!responseText) {
+                 // Handle empty response: it means no students were found.
+                setStudents([]);
+                setAttendance({});
+                setActiveFilters({ teacher: selectedTeacher, level: selectedLevel });
+                return; // Stop execution here
+            }
 
-            const data: StudentApiResponse = await response.json();
+            const data: StudentApiResponse = JSON.parse(responseText);
             
             if (data && Array.isArray(data.students)) {
                 const studentList = data.students;
